@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quick SEO Auditor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Quick QA-SEO Auditor</h1>
+    <p>Enter a URL to run a quick technical audit.</p>
+    
+    <form id="audit-form">
+        <input type="text" id="url-input" placeholder="https="example.com" required>
+        <button type="submit" id="audit-button">Run Audit</button>
+    </form>
+    
+    <div id="loading-spinner" class="hidden"></div>
+    <pre id="results-container"></pre>
+
+    <script src="script.js"></script>
+</body>
+</html>
