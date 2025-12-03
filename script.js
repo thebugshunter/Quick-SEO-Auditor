@@ -1,47 +1,71 @@
-// Wait for the page to load
-document.addEventListener('DOMContentLoaded', () => {
+const API_BASE_URL = "https://qa-auditor-api.onrender.com/"; 
+
+const form = document.getElementById('audit-form');
+const resultsDiv = document.getElementById('results');
+const loadingDiv = document.getElementById('loading');
+const errorDiv = document.getElementById('error-msg');
+
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
     
-    const form = document.getElementById('audit-form');
-    const urlInput = document.getElementById('url-input');
-    const resultsContainer = document.getElementById('results-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
+    // 1. Reset UI
+    const url = document.getElementById('url-input').value;
+    resultsDiv.innerHTML = '';
+    resultsDiv.classList.add('hidden');
+    errorDiv.classList.add('hidden');
+    loadingDiv.classList.remove('hidden');
 
-    form.addEventListener('submit', async (event) => {
-        // Prevent the page from reloading
-        event.preventDefault(); 
-        
-        const urlToAudit = urlInput.value;
-        
-        // Show loading spinner and clear old results
-        loadingSpinner.classList.remove('hidden');
-        resultsContainer.textContent = '';
+    try {
+        // 2. Call the Python Backend
+        const response = await fetch(`${API_BASE_URL}/audit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
 
-        try {
-            // Send the URL to Python back-end API
-            const response = await fetch('https://qa-auditor-api.onrender.com/audit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: urlToAudit }) // Send the URL as JSON
-            });
+        const data = await response.json();
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-
-            // Get the JSON results from the back-end
-            const results = await response.json();
-            
-            // Format and display the results
-            // 'results' is the dictionary Python script returned
-            resultsContainer.textContent = JSON.stringify(results, null, 2);
-
-        } catch (error) {
-            resultsContainer.textContent = `Error: ${error.message}`;
-        } finally {
-            // Hide loading spinner
-            loadingSpinner.classList.add('hidden');
+        // 3. Handle Errors from Backend
+        if (!response.ok) {
+            throw new Error(data.error || 'Server error occurred');
         }
-    });
+
+        // 4. Render Results nicely
+        loadingDiv.classList.add('hidden');
+        resultsDiv.classList.remove('hidden');
+
+        // Loop through the Python Dictionary and create cards
+        for (const [key, value] of Object.entries(data)) {
+            createResultCard(key, value);
+        }
+
+    } catch (err) {
+        loadingDiv.classList.add('hidden');
+        errorDiv.textContent = `Error: ${err.message}`;
+        errorDiv.classList.remove('hidden');
+    }
 });
+
+function createResultCard(key, value) {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+
+    // Formating the Key (e.g. "http_status" -> "HTTP STATUS")
+    const cleanKey = key.replace(/_/g, ' ');
+
+    // Determine visual style based on content
+    // If the Python string contains "✅", add green class. 
+    // If "❌", add red class.
+    if (String(value).includes("✅") || String(value).includes("200")) {
+        card.classList.add('pass');
+    } else if (String(value).includes("❌") || String(value).includes("FAIL")) {
+        card.classList.add('fail');
+    }
+
+    card.innerHTML = `
+        <span class="result-key">${cleanKey}</span>
+        <span class="result-value">${value}</span>
+    `;
+    
+    resultsDiv.appendChild(card);
+}
