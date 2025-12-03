@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Send the URL to Python back-end API
-            const response = await fetch('https://qa-auditor-api.onrender.com', {
+            const response = await fetch('https://qa-auditor-api.onrender.com/audit', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
